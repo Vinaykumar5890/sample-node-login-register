@@ -1,0 +1,39 @@
+###
+
+POST http://localhost:3000/register/
+Content-Type: application/json
+
+{
+  "username": "manga",
+  "name": "manga",
+  "password": "Manga@123",
+  "gender": "female",
+  "location": "Goggle"
+}
+
+
+
+###
+
+
+GET http://localhost:3000/
+
+###
+
+POST http://localhost:3000/login/
+Content-Type : application/json
+
+
+    {
+  "username": "manga",
+  "password": "Manga@123"
+}
+
+PUT http://localhost:3000/change-password/
+Content-Type : application/json
+
+{
+  "username": "adam_richard",
+  "oldPassword": "richard_567",
+  "newPassword": "richard@123"
+}
