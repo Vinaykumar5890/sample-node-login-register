@@ -1,102 +1,55 @@
 const express = require('express')
-const {open} = require('sqlite')
-const sqlite3 = require('sqlite3')
-const path = require('path')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-const databasePath = path.join(__dirname, 'userData.db')
-
+const mongoose = require('mongoose')
+const BrandName = require("./model")
 const app = express()
-
 app.use(express.json())
+mongoose
+  .connect(
+    'mongodb+srv://vinay:vinay@cluster0.fv2hjsb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+  )
+  .then(() => console.log('DB connected'))
+  .catch(err => console.log(err))
 
-let database = null
+app.get('/', (req, res) => {
+  res.send('<h1>Hello World</h1>')
+})
 
-const initializeDbAndServer = async () => {
+app.get("/getallbrands", async (req,res)=>{
+  try{
+   const allData = await BrandName.find();
+   return res.json(allData)
+  }
+  catch(err){
+    console.log(err)
+  }
+})
+app.get("/getallbrands:id", async (req,res)=>{
+  try{
+   const allData = await BrandName.findById(req.params.id);
+   return res.json(allData)
+  }
+  catch(err){
+    console.log(err)
+  }
+})
+app.delete("/getallbrands:id", async (req,res)=>{
+  try{
+   const allData = await BrandName.findByIdAndDelete(req.params.id);
+   return res.json(await BrandName.find())
+  }
+  catch(err){
+    console.log(err)
+  }
+})
+app.post("/addbrands", async (req,res)=>{
+  const {brandname} = req.body;
   try {
-    database = await open({
-      filename: databasePath,
-      driver: sqlite3.Database,
-    })
-
-    app.listen(3000, () =>
-      console.log('Server Running at http://localhost:3000/'),
-    )
-  } catch (error) {
-    console.log(`DB Error: ${error.message}`)
-    process.exit(1)
+     const newData = new BrandName({brandname});
+     await newData.save();
+     return res.json(await BrandName.find())
   }
-}
-
-initializeDbAndServer()
-
-const validatePassword = password => {
-  return password.length > 4
-}
-
-app.post('/register', async (request, response) => {
-  const {username, name, password, gender, location} = request.body
-  const hashedPassword = await bcrypt.hash(password, 10)
-  const selectUserQuery = `SELECT * FROM user WHERE username = '${username}';`
-  const databaseUser = await database.get(selectUserQuery)
-
-  if (databaseUser === undefined) {
-    const createUserQuery = `
-     INSERT INTO
-      user (username, name, password, gender, location)
-     VALUES
-      (
-       '${username}',
-       '${name}',
-       '${hashedPassword}',
-       '${gender}',
-       '${location}'  
-      );`
-    if (validatePassword(password)) {
-      await database.run(createUserQuery)
-      const payload = {username: username}
-      const jwttoken = jwt.sign(payload, 'My_SECRET_TOKEN')
-      response.send({jwttoken})
-    } else {
-      response.status(400)
-      response.send('Password is too short')
-    }
-  } else {
-    response.status(400)
-    response.send('User already exists')
+  catch(err){
+    consolelog(err);
   }
 })
-app.get('/', async (request, response) => {
-  const getBookQuery = `
-    SELECT
-      *
-    FROM
-     user;`
-  const book = await database.all(getBookQuery)
-  response.send(book)
-})
-app.post('/login', async (request, response) => {
-  const {username, password} = request.body
-  const selectUserQuery = `SELECT * FROM user WHERE username = '${username}';`
-  const databaseUser = await database.get(selectUserQuery)
-
-  if (databaseUser === undefined) {
-    response.status(400)
-    response.send('Invalid user')
-  } else {
-    const isPasswordMatched = await bcrypt.compare(
-      password,
-      databaseUser.password,
-    )
-    if (isPasswordMatched === true) {
-      const payload = {username: username}
-      const jwttoken = jwt.sign(payload, 'My_SECRET_TOKEN')
-      response.send({jwttoken})
-    } else {
-      response.status(400)
-      response.send('Invalid password')
-    }
-  }
-})
-
-module.exports = app
+app.listen(3000, () => console.log('Server running ..'))
